@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  postgresql:
+    image: library/postgres:11
+    environment:
+      - POSTGRES_PASSWORD=pgPassword
+      - POSTGRES_USER=subsidy-db-owner
+      - POSTGRES_DB=subsidy-db
+    ports:
+      - '5432:5432'
+    networks:
+      - tat_subs
+
+networks:
+  tat_subs:
+    name: tat_subs

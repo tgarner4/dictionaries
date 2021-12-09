@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: subsidy-back-dictionaries
+  name: subsidy-back-dictionaries-app-config
+
+data:
+  application.yml: |
+    logging.level: INFO
+    logging.level.org.springframework: WARN
+    logging.config: /config/logback.xml
+
+    build.version: ${IMAGE_VERSION}
+
+    spring:
+      datasource:
+        url: ${DB_URL}
+        driverClassName: org.postgresql.Driver
+        username: ${DB_OWNER_USERNAME}
+        password: ${DB_OWNER_PASSWORD}
+
+
+
+  logback.xml: |
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <contextName>subsidy-back-dictionaries</contextName>
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <contextName>
+                        <fieldName>app</fieldName>
+                    </contextName>
+                    <timestamp>
+                        <pattern>[UNIX_TIMESTAMP_AS_NUMBER]</pattern>
+                        <fieldName>time</fieldName>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <threadName>
+                        <fieldName>threadName</fieldName>
+                    </threadName>
+                    <logLevel>
+                        <fieldName>levelStr</fieldName>
+                    </logLevel>
+                    <loggerName>
+                        <fieldName>loggerName</fieldName>
+                    </loggerName>
+                    <callerData>
+                        <classFieldName>callerClass</classFieldName>
+                        <methodFieldName>callerMethod</methodFieldName>
+                        <lineFieldName>callerLine</lineFieldName>
+                    </callerData>
+                    <message>
+                        <fieldName>message</fieldName>
+                    </message>
+                    <mdc>
+                        <fieldName>mdc</fieldName>
+                    </mdc>
+                    <arguments>
+                        <includeNonStructuredArguments>false</includeNonStructuredArguments>
+                    </arguments>
+                    <stackTrace>
+                        <fieldName>stack</fieldName>
+                    </stackTrace>
+                </providers>
+            </encoder>
+        </appender>
+        <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+          <file>/opt/synapse/logs/subsidy.log</file>
+          <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+              <contextName>
+                <fieldName>app</fieldName>
+              </contextName>
+              <timestamp>
+                <pattern>[UNIX_TIMESTAMP_AS_NUMBER]</pattern>
+                <fieldName>${SERVER_EVENT_DATE_TIME}</fieldName>
+                <timeZone>UTC</timeZone>
+              </timestamp>
+              <threadName>
+                <fieldName>threadName</fieldName>
+              </threadName>
+              <logLevel>
+                <fieldName>levelStr</fieldName>
+              </logLevel>
+              <loggerName>
+                <fieldName>loggerName</fieldName>
+              </loggerName>
+              <callerData>
+                <classFieldName>callerClass</classFieldName>
+                <methodFieldName>callerMethod</methodFieldName>
+                <lineFieldName>callerLine</lineFieldName>
+              </callerData>
+              <message>
+                <fieldName>message</fieldName>
+              </message>
+              <mdc>
+                <fieldName>mdc</fieldName>
+              </mdc>
+              <arguments>
+                <includeNonStructuredArguments>false</includeNonStructuredArguments>
+              </arguments>
+              <stackTrace>
+                <fieldName>stack</fieldName>
+              </stackTrace>
+            </providers>
+          </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </configuration>

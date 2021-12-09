@@ -1,0 +1,163 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: subsidy-back-dictionaries-deployment-template
+  labels:
+    type: services
+objects:
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      annotations:
+        deployment.kubernetes.io/revision: "1"
+      labels:
+        app: subsidy-back-dictionaries
+        version: v1
+      name: subsidy-back-dictionaries
+    spec:
+      progressDeadlineSeconds: 600
+      replicas: 1
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: subsidy-back-dictionaries
+          version: v1
+      strategy:
+        rollingUpdate:
+          maxSurge: 25%
+          maxUnavailable: 25%
+        type: RollingUpdate
+      template:
+        metadata:
+          labels:
+            app: subsidy-back-dictionaries
+            version: v1
+          annotations:
+            readiness.status.sidecar.istio.io/initialDelaySeconds: '60'
+            readiness.status.sidecar.istio.io/periodSeconds: '10'
+            sidecar.istio.io/inject: 'true'
+            sidecar.istio.io/rewriteAppHTTPProbers: 'true'
+        spec:
+          containers:
+            - env:
+                - name: JDK_JAVA_OPTIONS
+                  value: ${jdk_java_options}
+                - name: MALLOC_ARENA_MAX
+                  value: "4"
+                - name: DB_URL
+                  value: ${postgres_subsidydb_conn_string}
+                - name: DB_OWNER_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      key: username
+                      name: subsidy-back-dictionaries-db-secret
+                - name: DB_OWNER_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: password
+                      name: subsidy-back-dictionaries-db-secret
+                - name: SERVER_EVENT_DATE_TIME
+                  value: ${server_event_date_time}
+              image: <>
+
+              imagePullPolicy: Always
+              livenessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /api/actuator/health
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                periodSeconds: 15
+                successThreshold: 1
+                timeoutSeconds: 2
+              name: subsidy-back-dictionaries
+              ports:
+                - containerPort: 8080
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 2
+                httpGet:
+                  path: /api/actuator/health
+                  port: 8080
+                  scheme: HTTP
+                initialDelaySeconds: 60
+                periodSeconds: 15
+                successThreshold: 1
+                timeoutSeconds: 2
+              resources:
+                limits:
+                  cpu: ${cpu_limits_dictionaries}
+                  memory: ${memory_size_limits_dictionaries}
+                requests:
+                  cpu: ${cpu_requests_dictionaries}
+                  memory: ${memory_size_requests_dictionaries}
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: File
+              volumeMounts:
+                - name: subsidy-back-dictionaries-logs-volume
+                  mountPath: /opt/synapse/logs
+                - mountPath: /config
+                  name: subsidy-backend-dictionaries-app-config-volume
+                  readOnly: true
+                - name: fluent-bit
+                  image: 'fluent/fluent-bit:1.5'
+                  resources:
+                    limits:
+                      cpu: 50m
+                      memory: 100Mi
+                    requests:
+                      cpu: 50m
+                      memory: 50Mi
+                  volumeMounts:
+                    - name: subsidy-back-dictionaries-logs-volume
+                      mountPath: /opt/synapse/logs
+                    - name: fluent-bit-volume
+                      readOnly: true
+                      mountPath: /fluent-bit/etc/
+                    - name: fluent-bit-cert-volume
+                      readOnly: true
+                      mountPath: /fluent-bit/cert/
+                  terminationMessagePath: /dev/termination-log
+                  terminationMessagePolicy: File
+                  imagePullPolicy: IfNotPresent
+          dnsPolicy: ClusterFirst
+          imagePullSecrets:
+            - name: dit-msk
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext: {}
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - name: fluent-bit-cert-volume
+              secret:
+                secretName: fluent-bit-cert
+                defaultMode: 400
+                optional: true
+            - name: fluent-bit-volume
+              configMap:
+                  name: fluent-bit
+                  defaultMode: 420
+            - name: subsidy-back-dictionaries-logs-volume
+              emptyDir: {}
+            - configMap:
+                defaultMode: 420
+                name: subsidy-back-dictionaries-app-config
+              name: subsidy-back-dictionaries-app-config-volume
+
+parameters:
+  - name: postgres_subsidydb_conn_string
+    required: true
+  - name: server_event_date_time
+    required: true
+  - name: jdk_java_options
+    required: true
+
+  - name: cpu_limits_dictionaries
+    required: true
+  - name: memory_size_limits_dictionaries
+    required: true
+  - name: cpu_requests_dictionaries
+    required: true
+  - name: memory_size_requests_dictionaries
+    required: true

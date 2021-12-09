@@ -1,0 +1,48 @@
+logging:
+  level: DEBUG
+  level.org.springframework: WARN
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+build.version: 0.0.0.0
+
+spring:
+  main:
+    banner-mode: OFF
+  jackson:
+      serialization:
+        indent_output: true
+  flyway:
+    enabled: false
+    locations: |
+      classpath:db/migration/version1/common,classpath:db/migration/version1/test-data,classpath:db/migration/version1/postgresql
+    out-of-order: true
+
+management:
+  endpoints:
+    enabled-by-default: false
+    web.exposure.include: health, prometheus
+  endpoint:
+    health.enabled: true
+    prometheus.enabled: true
+  metrics:
+    export:
+      prometheus.enabled: true
+    tags:
+      application: subsidy-backend
+
+
+user:
+  check:
+    periodicity:
+      hour: 1
+
+api.provider.service.url: http://ufs-provider-tatarstan.apps.ocp-public.sbercloud.ru
+
+kafka:
+  notification-request-topic: send-notification-request
+  notification-bootstrap-servers: 100.66.2.31:9092
+  notification-client-id: ЭП-ОВ

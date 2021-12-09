@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  postgresql:
+    image: postgresjsquery
+    environment:
+      - POSTGRES_PASSWORD=pgPassword
+      - POSTGRES_USER=subsidy-db-owner
+      - POSTGRES_DB=subsidy_db
+    ports:
+      - '5432:5432'
+  pprb:
+    image: localhost:5000/subsidy-backend:1.0-SNAPSHOT
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgresql:5432/subsidy_db
+    depends_on:
+      - postgresql
+    ports:
+      - '8080:8080'
